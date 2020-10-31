@@ -225,6 +225,10 @@ always@(negedge clk_sys) begin
         ioctl_addr <= addr_w;
         ioctl_wrd  <= 2'b11;
     end
+
+    //lock the write bit if the download is inactive
+    if (~ioctl_download) ioctl_wrd <= 2'b00; 
+
 end
 
 endmodule

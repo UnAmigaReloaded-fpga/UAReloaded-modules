@@ -96,7 +96,7 @@ signal btn_fire2G : std_logic := '0';
 signal btn_fire2H : std_logic := '0';
 signal btn_fire2I : std_logic := '0';
 
-signal btn_scroll : std_logic := '0';
+--signal btn_scroll : std_logic := '0';
 
 signal joy0 : std_logic_vector(5 downto 0);
 signal joy1 : std_logic_vector(5 downto 0);
@@ -129,10 +129,10 @@ controls <= btn_tilt &
             (btn_coin or btn_coin3_mame) &
             (btn_coin or btn_coin2_mame) & 
             (btn_coin or btn_coin1_mame) &
-            (btn_four_players  or btn_start4_mame) & 
-            (btn_three_players or btn_start3_mame) & 
-            (btn_two_players   or btn_start2_mame) &
-            (btn_one_player    or btn_start1_mame);
+            (btn_start4_mame) & 
+            (btn_start3_mame) & 
+            (btn_start2_mame) &
+            (btn_start1_mame);
                 
 p1 <= ("0000" & (not sega1_s)) or ("000" & btn_fireI & btn_fireH  &  btn_fireG  & btn_fireF  & btn_fireE  & btn_fireD  & btn_fireC  & btn_fireB  & btn_fireA  & btn_up  & btn_down  & btn_left  & btn_right)   when osd_enable = '0' else (others=>'0');
 p2 <= ("0000" & (not sega2_s)) or ("000" & btn_fire2I & btn_fire2H &  btn_fire2G & btn_fire2F & btn_fire2E & btn_fire2D & btn_fire2C & btn_fire2B & btn_fire2A & btn_up2 & btn_down2 & btn_left2 & btn_right2) when osd_enable = '0' else (others=>'0');
@@ -160,9 +160,9 @@ begin
             if KbdScanCode = x"06" then F_keys_s(2)       <= not(IsReleased); end if; -- F2
             if KbdScanCode = x"04" then F_keys_s(3)       <= not(IsReleased); end if; -- F3
             if KbdScanCode = x"0C" then F_keys_s(4)       <= not(IsReleased); end if; -- F4
-            if KbdScanCode = x"78" then F_keys_s(11)      <= not(IsReleased); end if; -- F11
+            if KbdScanCode = x"78" then F_keys_s(11)      <= not(IsReleased); if osd_enable = '1' and  IsReleased = '0'  then osd_rotate_s <= osd_rotate_s + 1; end if; end if; -- F11
 
-            if KbdScanCode = x"7E" then btn_scroll        <= not(IsReleased); end if; -- Scroll Lock
+            if KbdScanCode = x"7E" then if IsReleased = '0' then direct_video_s <= not direct_video_s;   end if; end if; -- Scroll Lock
 
             if KbdScanCode = x"75" then btn_up            <= not(IsReleased); end if; -- up
             if KbdScanCode = x"72" then btn_down          <= not(IsReleased); end if; -- down
@@ -257,21 +257,6 @@ begin
   end if;
 end process;
 
-process(F_keys_s(11))
-begin                            
-  if rising_edge(F_keys_s(11)) then
-        if osd_enable = '1' then
-            osd_rotate_s <= osd_rotate_s + 1;
-        end if;
-  end if;
-end process;
-
-process(btn_scroll)
-begin                            
-  if rising_edge(btn_scroll) then
-        direct_video_s <= not direct_video_s;
-  end if;
-end process;
 
 --- Joystick read with sega 6 button support----------------------
 
@@ -293,13 +278,17 @@ begin
 end process;
 
 
-    process(clk_sega_s)
-        variable state_v : unsigned(8 downto 0) := (others=>'0');
-        variable j1_sixbutton_v : std_logic := '0';
-        variable j2_sixbutton_v : std_logic := '0';
-    begin
-        if falling_edge(clk_sega_s) then
-        
+process(clk)
+    variable state_v : unsigned(8 downto 0) := (others=>'0');
+    variable j1_sixbutton_v : std_logic := '0';
+    variable j2_sixbutton_v : std_logic := '0';
+    variable sega_edge : std_logic_vector(1 downto 0);
+begin
+    if rising_edge(clk) then
+
+        sega_edge := sega_edge(0) & clk_sega_s;
+    
+        if sega_edge = "01" then
             state_v := state_v + 1;
             
             case state_v is
@@ -367,11 +356,11 @@ end process;
                     joyP7_s <= '1';
                     
             end case;
-
         end if;
-    end process;
-    
-    sega_strobe <= joyP7_s;
+    end if;
+end process;
+
+sega_strobe <= joyP7_s;
 ---------------------------
 
 end Behavioral;

@@ -93,33 +93,39 @@ architecture rtl of framebuffer is
     signal clk_buffer6 : std_logic;
 begin
 
-    process (clk_i)
+    process (clk_sys)
     variable edge_hs : std_logic_vector(1 downto 0);
     variable edge_vs : std_logic_vector(1 downto 0);
+    variable edge_clk_ena: std_logic_vector(1 downto 0);
     begin
-        if rising_edge(clk_i) then
+        if rising_edge(clk_sys) then
 
-            edge_hs := edge_hs(0) & hblank_i;
-            edge_vs := edge_vs(0) & vblank_i;
-            
-            I_HCNT <= I_HCNT + 1;
+            edge_clk_ena := edge_clk_ena(0) & clk_i; --clock enable joga uns pixels extras na tela
 
-            if hblank_i = '1' then
-                I_HCNT <= (others => '0');
-            end if;
+            if edge_clk_ena = "01" then
 
-            if vblank_i = '1' then
-                I_VCNT <= (others => '0');
-            end if;
+                edge_hs := edge_hs(0) & hblank_i;
+                edge_vs := edge_vs(0) & vblank_i;
+                
+                I_HCNT <= I_HCNT + 1;
 
-            if edge_hs = "01" then
-                I_VCNT <= I_VCNT + 1;
-            end if;
+                if hblank_i = '1' then
+                    I_HCNT <= (others => '0');
+                end if;
 
-            if (hblank_i = '0' and vblank_i = '0') then
-                wren <= '1';
-            else
-                wren <= '0';
+                if vblank_i = '1' then
+                    I_VCNT <= (others => '0');
+                end if;
+
+                if edge_hs = "01" then
+                    I_VCNT <= I_VCNT + 1;
+                end if;
+
+                if (hblank_i = '0' and vblank_i = '0') then
+                    wren <= '1';
+                else
+                    wren <= '0';
+                end if;
             end if;
 
         end if;
@@ -179,6 +185,7 @@ begin
         if rising_edge(clk_sys) then 
             clk_buffer <= clk_i; --delay the pixel clock for the BRAM
             clk_buffer2 <= clk_buffer;
+            clk_buffer3 <= clk_buffer2;
         end if;
     end process;
     
@@ -190,7 +197,7 @@ begin
     )
     port map
     (
-        clk_a_i     => clk_buffer2,
+        clk_a_i     => clk_buffer3,
         data_a_i    => RGB_i,
         addr_a_i    => addr_wr,
         we_i        => wren,
@@ -230,12 +237,18 @@ begin
         end if;
     end process;
 
-    process (clk_i, I_HCNT, I_VCNT)
+    process (clk_sys, I_HCNT, I_VCNT)
     variable wr_result_v : std_logic_vector(16 downto 0);
+    variable edge_clk_ena: std_logic_vector(1 downto 0);
     begin
-        if rising_edge(clk_i) then
-          wr_result_v := std_logic_vector((unsigned(I_VCNT)                  * to_unsigned(hc_max, 9)) + unsigned(I_HCNT));
-          addr_wr <= wr_result_v(15 downto 0);
+        if rising_edge(clk_sys) then
+
+            edge_clk_ena := edge_clk_ena(0) & clk_i;
+
+            if edge_clk_ena = "01" then
+               wr_result_v := std_logic_vector((unsigned(I_VCNT)                  * to_unsigned(hc_max, 9)) + unsigned(I_HCNT));
+               addr_wr <= wr_result_v(15 downto 0);
+            end if;
         end if;
     end process;
 
