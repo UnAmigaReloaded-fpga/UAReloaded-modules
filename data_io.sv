@@ -135,7 +135,7 @@ always@(posedge SPI_SCK, posedge SPI_SS2) begin
                 // command 0x61: start the data streaming
                 if(sbuf[6:0] == 7'b0110000 && SPI_DI == 1'b1)
                 begin
-                    //addr <= 0;
+                    //addr <= 0; //nao pode estar aqui, senao zera o endereço a cada ciclo de dados tem que estar no 0x60
                     ioctl_download <= 1;
                 end
                 

@@ -33,7 +33,7 @@ module osd (
 
 parameter OSD_X_OFFSET = 10'd0;
 parameter OSD_Y_OFFSET = 10'd0;
-parameter OSD_COLOR    = 3'd0;
+parameter OSD_COLOR    = 3'd1;
 parameter OSD_AUTO_CE  = 1'b1;
 
 localparam OSD_WIDTH   = 10'd256;
